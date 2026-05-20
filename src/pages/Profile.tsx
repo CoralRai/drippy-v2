@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -19,15 +19,10 @@ const Profile = () => {
   const [uploading, setUploading] = useState(false);
   const [displayName, setDisplayName] = useState("");
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
-  const [quizData, setQuizData] = useState<Record<string, any> | null>(null);
+  const [quizData, setQuizData] = useState<Record<string, unknown> | null>(null);
   const [stats, setStats] = useState({ savedOutfits: 0, interactions: 0, wardrobeItems: 0 });
 
-  useEffect(() => {
-    if (!user) return;
-    loadProfile();
-  }, [user]);
-
-  const loadProfile = async () => {
+  const loadProfile = useCallback(async () => {
     if (!user) return;
     setLoading(true);
     try {
@@ -70,7 +65,12 @@ const Profile = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
+
+  useEffect(() => {
+    if (!user) return;
+    loadProfile();
+  }, [loadProfile, user]);
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -102,8 +102,9 @@ const Profile = () => {
 
       setAvatarUrl(url);
       toast({ title: "Avatar updated!" });
-    } catch (err: any) {
-      toast({ title: "Upload failed", description: err.message, variant: "destructive" });
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
+      toast({ title: "Upload failed", description: message, variant: "destructive" });
     } finally {
       setUploading(false);
     }
@@ -120,8 +121,9 @@ const Profile = () => {
       }, { onConflict: "user_id" });
       if (error) throw error;
       toast({ title: "Profile saved!" });
-    } catch (err: any) {
-      toast({ title: "Error", description: err.message, variant: "destructive" });
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
+      toast({ title: "Error", description: message, variant: "destructive" });
     } finally {
       setSaving(false);
     }

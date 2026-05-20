@@ -21,11 +21,16 @@ const OccasionSelect = () => {
   const { user } = useAuth();
 
   // #3: load occasion history
+interface OccasionHistoryRow {
+  occasion: string;
+  created_at: string;
+}
+
   useEffect(() => {
     const load = async () => {
       if (!user) return;
       const { data } = await supabase
-        .from("generated_outfits")
+        .from<OccasionHistoryRow>("generated_outfits")
         .select("occasion, created_at")
         .eq("user_id", user.id);
 
@@ -33,7 +38,7 @@ const OccasionSelect = () => {
 
       // Group by occasion
       const grouped: Record<string, OccasionHistory> = {};
-      data.forEach((row: any) => {
+      data.forEach((row) => {
         if (!grouped[row.occasion]) {
           grouped[row.occasion] = {
             occasion: row.occasion,

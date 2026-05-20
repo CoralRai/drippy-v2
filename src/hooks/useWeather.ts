@@ -72,9 +72,10 @@ export function useWeather() {
           description: WEATHER_CODES[code] || "Unknown",
           suggestion: getSuggestion(temp),
         });
-      } catch (e: any) {
+      } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : String(error);
         // Fallback: use a default warm weather
-        setError(e.message);
+        setError(message);
         setWeather({
           temperature: 25,
           weatherCode: 0,

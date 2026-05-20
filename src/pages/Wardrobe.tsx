@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -70,11 +70,7 @@ const Wardrobe = () => {
   const [notes, setNotes] = useState("");
   const [saving, setSaving] = useState(false);
 
-  useEffect(() => {
-    fetchItems();
-  }, [user]);
-
-  const fetchItems = async () => {
+  const fetchItems = useCallback(async () => {
     if (!user) return;
     const { data } = await supabase
       .from("user_wardrobe")
@@ -83,7 +79,11 @@ const Wardrobe = () => {
       .order("created_at", { ascending: false });
     setItems((data as WardrobeItem[]) || []);
     setLoading(false);
-  };
+  }, [user]);
+
+  useEffect(() => {
+    fetchItems();
+  }, [fetchItems]);
 
   const handleAdd = async () => {
     if (!user || !name.trim()) return;

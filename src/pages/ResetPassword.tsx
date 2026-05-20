@@ -49,8 +49,9 @@ const ResetPassword = () => {
       if (error) throw error;
       toast({ title: "Password updated!", description: "You can now sign in with your new password." });
       navigate("/login");
-    } catch (error: any) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
+      toast({ title: "Error", description: message, variant: "destructive" });
     } finally {
       setLoading(false);
     }

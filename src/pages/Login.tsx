@@ -22,10 +22,11 @@ const Login = () => {
     try {
       await signIn(email, password);
       navigate("/quiz");
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
       toast({
         title: "Login failed",
-        description: error.message,
+        description: message,
         variant: "destructive",
       });
     } finally {

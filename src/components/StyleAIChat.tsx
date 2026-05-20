@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { Sparkles, Send, X, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,9 +29,12 @@ export default function StyleAIChat({ occasion, currentOutfit }: StyleAIChatProp
   const [loading, setLoading] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
 
-  const outfitContext = currentOutfit?.top
-    ? `User is viewing a ${occasion} outfit: ${currentOutfit.top} + ${currentOutfit.bottom} + ${currentOutfit.footwear}. Color harmony: ${currentOutfit.colorHarmony}%.`
-    : `User is browsing ${occasion} recommendations.`;
+  const outfitContext = useMemo(
+    () => currentOutfit?.top
+      ? `User is viewing a ${occasion} outfit: ${currentOutfit.top} + ${currentOutfit.bottom} + ${currentOutfit.footwear}. Color harmony: ${currentOutfit.colorHarmony}%.`
+      : `User is browsing ${occasion} recommendations.`,
+    [occasion, currentOutfit]
+  );
 
   useEffect(() => {
     if (open && messages.length === 0) {
@@ -40,7 +43,7 @@ export default function StyleAIChat({ occasion, currentOutfit }: StyleAIChatProp
         : `Hi! I'm your Drippy style advisor ✨ You're browsing ${occasion} looks. Ask me anything — color advice, what shoes to pick, how to dress for your body type!`;
       setMessages([{ role: "assistant", content: greeting }]);
     }
-  }, [open]);
+  }, [open, messages.length, currentOutfit, occasion]);
 
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
 

@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Heart, ThumbsUp, ThumbsDown, Shirt, Footprints,
-  CloudSun, Star, CheckCircle2, Sparkles, Package
+  CloudSun, Star, CheckCircle2, Sparkles, Package,
+  ShoppingBag, ExternalLink
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useTrackInteraction } from "@/hooks/useTrackInteraction";
@@ -71,6 +72,142 @@ function ScorePill({ label, value }: { label: string; value: number }) {
   );
 }
 
+function getPicsumUrl(item: OutfitItem): string {
+  const seed = encodeURIComponent(item.name.trim().replace(/\s+/g, "-"));
+  return `https://picsum.photos/seed/${seed}/200/260`;
+}
+
+async function searchUnsplashImage(item: OutfitItem): Promise<string> {
+  const query = `${item.color} ${item.name} fashion clothing`;
+  const key = import.meta.env.VITE_UNSPLASH_ACCESS_KEY;
+  if (!key) return getPicsumUrl(item);
+
+  const res = await fetch(
+    `https://api.unsplash.com/search/photos?query=${encodeURIComponent(query)}&per_page=1&orientation=portrait&client_id=${key}`
+  );
+
+  if (!res.ok) {
+    throw new Error("Unsplash request failed");
+  }
+
+  const data = await res.json() as { results?: Array<{ urls?: { small?: string } }> };
+  return data.results?.[0]?.urls?.small || getPicsumUrl(item);
+}
+
+function getShopLinks(item: OutfitItem) {
+  const query = encodeURIComponent(`${item.color} ${item.name}`);
+  const queryHyphen = `${item.color}-${item.name}`.replace(/\s+/g, "-");
+  return {
+    amazon: `https://www.amazon.in/s?k=${query}`,
+    myntra: `https://www.myntra.com/${queryHyphen}`,
+    flipkart: `https://www.flipkart.com/search?q=${query}`,
+  };
+}
+
+function OutfitItemCard({
+  label,
+  item,
+  icon,
+  isOpen,
+  onToggleShop,
+}: {
+  label: string;
+  item: OutfitItem;
+  icon: JSX.Element;
+  isOpen: boolean;
+  onToggleShop: () => void;
+}) {
+  const [imageUrl, setImageUrl] = useState<string>(getPicsumUrl(item));
+  const [loadingImage, setLoadingImage] = useState(true);
+  const links = getShopLinks(item);
+
+  useEffect(() => {
+    let mounted = true;
+    setLoadingImage(true);
+
+    searchUnsplashImage(item)
+      .then((url) => {
+        if (mounted) setImageUrl(url);
+      })
+      .catch(() => {
+        if (mounted) setImageUrl(getPicsumUrl(item));
+      })
+      .finally(() => {
+        if (mounted) setLoadingImage(false);
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, [item]);
+
+  return (
+    <div className="rounded-3xl border border-border/60 bg-secondary overflow-hidden shadow-sm">
+      <div className="relative h-52 overflow-hidden bg-slate-950/5">
+        {loadingImage && (
+          <div className="absolute inset-0 animate-pulse bg-slate-900/40" />
+        )}
+        <img
+          src={imageUrl}
+          alt={`${item.color} ${item.name}`}
+          className="h-full w-full object-cover transition duration-300"
+          onError={(event) => {
+            event.currentTarget.src = getPicsumUrl(item);
+          }}
+        />
+        <span className="absolute left-3 top-3 rounded-full bg-black/60 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-white">
+          {label}
+        </span>
+      </div>
+      <div className="p-3 space-y-3">
+        <div>
+          <p className="text-xs text-muted-foreground">Item</p>
+          <p className="text-sm font-semibold truncate text-foreground">{item.name}</p>
+          <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
+            <ColorDot color={item.color} />
+            <span>{item.color}</span>
+          </div>
+        </div>
+        <div className="flex items-center justify-between gap-2">
+          <Button size="sm" variant="outline" className="flex-1 gap-2" onClick={onToggleShop}>
+            <ShoppingBag className="h-4 w-4" />
+            Shop this
+            <ExternalLink className="h-3.5 w-3.5" />
+          </Button>
+        </div>
+        {isOpen && (
+          <div className="grid gap-2">
+            <a
+              href={links.amazon}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="rounded-2xl bg-orange-500/10 px-3 py-2 text-sm font-medium text-orange-700 transition hover:bg-orange-500/15"
+            >
+              Amazon
+            </a>
+            <a
+              href={links.myntra}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="rounded-2xl bg-pink-500/10 px-3 py-2 text-sm font-medium text-pink-700 transition hover:bg-pink-500/15"
+            >
+              Myntra
+            </a>
+            <a
+              href={links.flipkart}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="rounded-2xl bg-sky-500/10 px-3 py-2 text-sm font-medium text-sky-700 transition hover:bg-sky-500/15"
+            >
+              Flipkart
+            </a>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // #4: Star rating component
 function StarRating({ value, onChange }: { value: number | null; onChange: (v: number) => void }) {
   const [hovered, setHovered] = useState(0);
@@ -104,6 +241,7 @@ export default function DynamicOutfitCard({ outfit, onSaveToggle, onWoreRating }
   const [rating, setRating] = useState<number | null>(wore_rating);
   const [showWore, setShowWore] = useState(false);
   const [showWhy, setShowWhy] = useState(false);   // #2
+  const [showShop, setShowShop] = useState<Record<string, boolean>>({});
   const { track } = useTrackInteraction();
   const { user } = useAuth();
   const { toast } = useToast();
@@ -189,24 +327,24 @@ export default function DynamicOutfitCard({ outfit, onSaveToggle, onWoreRating }
       </div>
 
       {/* Outfit items */}
-      <div className="px-4 py-3 space-y-3 flex-1">
-        {[
-          { icon: <Shirt className="h-4 w-4" />, label: "Top", item: o.top },
-          { icon: <Shirt className="h-4 w-4 rotate-180" />, label: "Bottom", item: o.bottom },
-          { icon: <Footprints className="h-4 w-4" />, label: "Shoes", item: o.footwear },
-          ...(o.outerwear ? [{ icon: <CloudSun className="h-4 w-4" />, label: "Outer", item: o.outerwear }] : []),
-        ].map(({ icon, label, item }) => (
-          <div key={label} className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-secondary flex items-center justify-center shrink-0 text-muted-foreground">
-              {icon}
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-xs text-muted-foreground">{label}</p>
-              <p className="text-sm font-medium truncate">{item.name}</p>
-            </div>
-            <ColorDot color={item.color} />
-          </div>
-        ))}
+      <div className="px-4 py-3 flex-1">
+        <div className="grid gap-4 sm:grid-cols-2">
+          {[
+            { icon: <Shirt className="h-10 w-10 text-white/90" />, label: "Top", item: o.top },
+            { icon: <Shirt className="h-10 w-10 rotate-180 text-white/90" />, label: "Bottom", item: o.bottom },
+            { icon: <Footprints className="h-10 w-10 text-white/90" />, label: "Shoes", item: o.footwear },
+            ...(o.outerwear ? [{ icon: <CloudSun className="h-10 w-10 text-white/90" />, label: "Outer", item: o.outerwear }] : []),
+          ].map(({ icon, label, item }) => (
+            <OutfitItemCard
+              key={label}
+              label={label}
+              item={item}
+              icon={icon}
+              isOpen={!!showShop[label]}
+              onToggleShop={() => setShowShop((prev) => ({ ...prev, [label]: !prev[label] }))}
+            />
+          ))}
+        </div>
       </div>
 
       {/* Scores row */}

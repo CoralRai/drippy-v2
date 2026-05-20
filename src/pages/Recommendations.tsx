@@ -74,7 +74,7 @@ const Recommendations = () => {
         .eq("is_new", true)
         .not("id", "in", `(${(data?.outfits || []).map((o: GeneratedOutfit) => `"${o.id}"`).join(",")})`);
 
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
       toast({ title: "Error", description: "Failed to generate outfits. Check your Gemini key.", variant: "destructive" });
     } finally {
@@ -91,7 +91,7 @@ const Recommendations = () => {
       await generateNew();
     };
     init();
-  }, []);   // eslint-disable-line react-hooks/exhaustive-deps
+  }, [loadHistory, generateNew]);
 
   const handleRefresh = async () => {
     toast({ title: "Generating new outfits…", description: "Gemini is styling you now!" });

@@ -27,10 +27,11 @@ const Signup = () => {
         description: "Check your email to confirm, then sign in.",
       });
       navigate("/login");
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
       toast({
         title: "Signup failed",
-        description: error.message,
+        description: message,
         variant: "destructive",
       });
     } finally {

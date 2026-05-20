@@ -133,8 +133,9 @@ const StyleQuiz = () => {
 
       toast({ title: "Style profile saved!", description: "Now pick your occasion." });
       navigate("/occasions");
-    } catch (error: any) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
+      toast({ title: "Error", description: message, variant: "destructive" });
     } finally {
       setLoading(false);
     }

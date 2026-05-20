@@ -23,8 +23,9 @@ const ForgotPassword = () => {
       if (error) throw error;
       setSent(true);
       toast({ title: "Email sent!", description: "Check your inbox for the reset link." });
-    } catch (error: any) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
+      toast({ title: "Error", description: message, variant: "destructive" });
     } finally {
       setLoading(false);
     }

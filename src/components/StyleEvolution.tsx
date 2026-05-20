@@ -21,6 +21,12 @@ const TAG_COLORS: Record<string, string> = {
   elegant: "bg-violet-400",
 };
 
+interface InteractionRow {
+  style_tags?: string[] | null;
+}
+
+const KNOWN_STYLE_TAGS = new Set(Object.keys(TAG_COLORS));
+
 export default function StyleEvolution() {
   const { user } = useAuth();
   const [stats, setStats] = useState<StyleStat[]>([]);
@@ -31,7 +37,7 @@ export default function StyleEvolution() {
 
       // Fetch liked interactions with their style_tags
       const { data } = await supabase
-        .from("user_interactions")
+        .from<InteractionRow>("user_interactions")
         .select("style_tags")
         .eq("user_id", user.id)
         .eq("interaction_type", "like")
@@ -41,11 +47,11 @@ export default function StyleEvolution() {
 
       // Count tags
       const tagCounts: Record<string, number> = {};
-      data.forEach((row: any) => {
-        (row.style_tags || []).forEach((tag: string) => {
+      data.forEach((row) => {
+        (row.style_tags || []).forEach((tag) => {
           const t = tag.toLowerCase();
           // Only count known style tags, not colors or occasions
-          if (TAG_COLORS[t] || ["casual","minimal","streetwear","formal","preppy","bohemian","sporty","classic","trendy","elegant"].includes(t)) {
+          if (KNOWN_STYLE_TAGS.has(t)) {
             tagCounts[t] = (tagCounts[t] || 0) + 1;
           }
         });
