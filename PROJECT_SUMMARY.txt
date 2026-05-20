@@ -1,0 +1,134 @@
+Drippy Project Summary
+======================
+
+What the project is
+-------------------
+Drippy is an AI-powered outfit recommendation web app. It works like a personal stylist: users create an account, complete a style quiz, choose an occasion, and receive complete outfit recommendations based on their profile, preferences, wardrobe, weather, and past interactions.
+
+The goal of the project is to make styling easier by combining personal fashion data with AI-generated outfit suggestions. The app can recommend outfits, save them, track likes/dislikes, let users build a wardrobe, and improve future suggestions using previous feedback.
+
+Main features
+-------------
+1. User authentication
+   Users can sign up, log in, reset passwords, and access protected pages through Supabase authentication.
+
+2. Style quiz
+   Users provide fashion-relevant details such as gender, age group, body type, skin tone, preferred fit, favorite colors, and style preferences.
+
+3. Occasion-based recommendations
+   Users select an occasion, and the app generates outfits that match that event.
+
+4. AI outfit generation
+   A Supabase Edge Function calls an AI model to generate six complete outfit options. Each outfit includes clothing items, colors, styling tips, body type reasoning, skin tone reasoning, style tags, and scoring.
+
+5. Wardrobe builder
+   Users can add their own clothing items. These wardrobe items can be included as context when generating outfits.
+
+6. Saved outfits and interaction tracking
+   Users can save outfits, like/dislike suggestions, mark outfits as worn, and rate them. These interactions are stored and used to improve later recommendations.
+
+7. Weather-aware styling
+   The app has weather support so recommendations can consider whether the weather is warm, cold, rainy, or otherwise relevant to clothing choices.
+
+8. Style AI chat
+   A floating chat assistant helps users ask styling questions about outfits.
+
+Tech stack used
+---------------
+Frontend:
+- React
+- TypeScript
+- Vite
+- React Router
+- TanStack React Query
+- Tailwind CSS
+- shadcn/ui components
+- Radix UI primitives
+- lucide-react icons
+
+Backend and database:
+- Supabase Auth
+- Supabase PostgreSQL database
+- Supabase Row Level Security policies
+- Supabase Edge Functions
+
+AI and external logic:
+- AI outfit generation through a Supabase Edge Function
+- Weather-aware recommendation context
+- Fashion compatibility and color harmony logic in the frontend utilities
+
+Testing and tooling:
+- Vitest
+- ESLint
+- TypeScript configuration
+- Vite build system
+
+How we built it
+---------------
+1. Set up the React app
+   The project was built as a Vite React TypeScript application. Routing was added using React Router, with pages for the landing page, login, signup, quiz, occasion selection, recommendations, wardrobe, saved outfits, profile, and error handling.
+
+2. Added the UI system
+   Tailwind CSS, shadcn/ui, Radix UI, and lucide-react were used to create the interface. Reusable UI components live in src/components/ui, while app-specific components such as outfit cards, navigation links, style evolution, and chat live in src/components.
+
+3. Integrated authentication
+   Supabase authentication was connected through the AuthContext. ProtectedRoute ensures that only logged-in users can access private app screens such as the quiz, wardrobe, recommendations, saved outfits, and profile.
+
+4. Designed the database schema
+   Supabase migrations define the main tables:
+   - profiles
+   - style_quizzes
+   - generated_outfits
+   - user_interactions
+   - user_wardrobe
+   - fashion and compatibility-related data
+
+   Row Level Security policies were added so users can only manage their own data.
+
+5. Built the style quiz flow
+   The quiz collects user preferences and stores them in Supabase. This data becomes the core profile used when generating outfits.
+
+6. Built the recommendation flow
+   After choosing an occasion, the app calls the generate-outfits Supabase Edge Function. That function gathers the user's quiz data, liked outfits, worn/rated outfits, and wardrobe items, then sends that context to an AI model to generate six tailored outfits.
+
+7. Stored generated outfits
+   AI responses are parsed as JSON and saved into the generated_outfits table. This allows outfits to remain visible on later visits and makes saved outfit history possible.
+
+8. Added feedback loops
+   User actions such as like, dislike, save, purchase, and wore are recorded in user_interactions. Ratings for worn outfits are also stored. These signals are sent back into future generation prompts so recommendations become more personalized over time.
+
+9. Added wardrobe support
+   Users can add their own clothing items to user_wardrobe. The generation function reads these items and can suggest outfits that reuse things the user already owns.
+
+10. Added deployment and setup instructions
+   The README explains how to run Supabase migrations, configure secrets, deploy Edge Functions, install dependencies, and run the local development server.
+
+How to run the project
+----------------------
+1. Copy .env.example to .env and fill in the Supabase and AI API values.
+2. Install dependencies:
+   npm install
+3. Start the development server:
+   npm run dev
+4. Run tests:
+   npm test
+5. Build for production:
+   npm run build
+
+Important files and folders
+---------------------------
+- src/App.tsx: Main app routing and providers.
+- src/pages: Main screens of the application.
+- src/components: Reusable app components.
+- src/components/ui: shadcn/ui component library.
+- src/contexts/AuthContext.tsx: Authentication state and Supabase auth handling.
+- src/integrations/supabase: Supabase client and generated types.
+- src/lib: Utility functions, quiz options, and color harmony logic.
+- src/hooks: Custom hooks for tracking interactions, weather, mobile state, and toast behavior.
+- supabase/migrations: Database schema and permission changes.
+- supabase/functions: Edge Functions for outfit generation, tracking, virtual try-on, seeding fashion data, and scraping fashion insights.
+- README.md: Setup and deployment instructions.
+
+In short
+--------
+Drippy is a full-stack AI fashion assistant. We built it with a React/Vite frontend, Supabase for auth/database/serverless functions, and AI-powered outfit generation. The app collects user style information, generates outfit recommendations, stores them, tracks feedback, and uses that feedback to make future styling suggestions smarter.
